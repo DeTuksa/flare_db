@@ -12,9 +12,10 @@ impl InMemoryDB {
         }
     }
 
-    pub fn set(&self, key: String, value: String) {
+    pub fn set(&self, key: String, value: String) -> bool {
         let mut store = self.store.write().unwrap();
         store.insert(key, value);
+        true
     }
 
     pub fn get(&self, key: String) -> Option<String> {
@@ -22,9 +23,9 @@ impl InMemoryDB {
         store.get(&key).cloned()
     }
 
-    pub fn delete(&self, key: String) {
+    pub fn delete(&self, key: String) -> bool {
         let mut store = self.store.write().unwrap();
-        store.remove(&key);
+        store.remove(&key).is_some()
     }
 }
 
