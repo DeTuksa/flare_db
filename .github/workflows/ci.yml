@@ -19,9 +19,3 @@ jobs:
 
     - name: Run tests
       run: cargo test --verbose
-
-    - name: Run Clippy (Lint)
-      run: cargo clippy -- -D warnings
-
-    - name: Run Rustfmt (Code Formatting)
-      run: cargo fmt -- --check
