@@ -26,3 +26,24 @@ impl InMemoryDB {
         store.remove(&key);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_set_get_del() {
+        let db = InMemoryDB::new();
+
+        //Test set and get
+        db.set("key1".to_string(), "val1".to_string());
+        assert_eq!(db.get("key1".to_string()), Some("val1".to_string()));
+
+        //Test getting not set key
+        assert_eq!(db.get("key2".to_string()), None);
+
+        //Test getting deleted key
+        db.delete("key1".to_string());
+        assert_eq!(db.get("key1".to_string()), None);
+    }
+}
