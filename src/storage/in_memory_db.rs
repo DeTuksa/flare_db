@@ -1,5 +1,6 @@
 use std::{collections::HashMap, sync::{Arc, RwLock}};
 
+#[derive(Debug, Clone)]
 pub struct InMemoryDB {
     store: Arc<RwLock<HashMap<String, String>>>
 }
