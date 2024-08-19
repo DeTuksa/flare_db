@@ -1,17 +1,17 @@
-use std::{error::Error, sync::Arc};
+use std::{error::Error, sync::{Arc, Mutex}};
 
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::TcpListener};
 
-use crate::{network::message::{Message, Response}, storage::in_memory_db::InMemoryDB};
+use crate::{network::message::{Message, Response}, storage::storage::Storage};
 
 pub struct Server {
-    db: Arc<InMemoryDB>
+    pub db: Arc<Mutex<Storage>>
 }
 
 impl Server {
-    pub fn new() -> Self {
+    pub fn new(path: &str) -> Self {
         Server {
-            db: Arc::new(InMemoryDB::new())
+            db: Arc::new(Mutex::new(Storage::new(path)))
         }
     }
 
@@ -21,7 +21,7 @@ impl Server {
 
         loop {
             let (stream, _) = listener.accept().await?;
-            let db = Arc::clone(&self.db);
+            let db = self.db.clone();
             tokio::spawn(async move {
                 handl_client(stream, db).await;
             });
@@ -31,7 +31,7 @@ impl Server {
 
 async fn handl_client(
     mut stream: tokio::net::TcpStream,
-    db: Arc<InMemoryDB>
+    db: Arc<Mutex<Storage>>
 ) {
     let mut buf = [0; 1024];
 
@@ -47,16 +47,19 @@ async fn handl_client(
                     Ok(msg) => {
                         let response = match msg {
                             Message::Get(key) => {
-                                let value = db.get(key);
+                                let db_clone = db.lock().unwrap();
+                                let value = db_clone.get_in_memory(&key).or_else(|| db_clone.get_persistent(&key));
                                 Response::Value(value)
                             }
                             Message::Set(key, value) => {
-                                let success = db.set(key, value);
-                                Response::Success(success)
+                                let success_in_mem = db.lock().unwrap().set_in_memory(key.clone(), value.clone());
+                                let success_pers = db.lock().unwrap().set_persistent(key, value);
+                                Response::Success(success_in_mem && success_pers)
                             }
                             Message::Delete(key) => {
-                                let success =db.delete(key);
-                                Response::Success(success)
+                                let success_in_mem =db.lock().unwrap().delete_in_memory(&key);
+                                let success_pers =db.lock().unwrap().delete_persistent(&key);
+                                Response::Success(success_pers && success_in_mem)
                             }
                         };
                         let response_json = serde_json::to_string(&response).unwrap();

@@ -18,14 +18,18 @@ impl InMemoryDB {
         true
     }
 
-    pub fn get(&self, key: String) -> Option<String> {
+    pub fn get(&self, key: &str) -> Option<String> {
         let store = self.store.read().unwrap();
-        store.get(&key).cloned()
+        store.get(key).cloned()
     }
 
-    pub fn delete(&self, key: String) -> bool {
+    pub fn delete(&self, key: &str) -> bool {
         let mut store = self.store.write().unwrap();
-        store.remove(&key).is_some()
+        store.remove(key).is_some()
+    }
+
+    pub fn clone_state(&self) -> HashMap<String, String> {
+        self.clone().store.read().unwrap().clone()
     }
 }
 
@@ -39,13 +43,13 @@ mod tests {
 
         //Test set and get
         db.set("key1".to_string(), "val1".to_string());
-        assert_eq!(db.get("key1".to_string()), Some("val1".to_string()));
+        assert_eq!(db.get("key1"), Some("val1".to_string()));
 
         //Test getting not set key
-        assert_eq!(db.get("key2".to_string()), None);
+        assert_eq!(db.get("key2"), None);
 
         //Test getting deleted key
-        db.delete("key1".to_string());
-        assert_eq!(db.get("key1".to_string()), None);
+        db.delete("key1");
+        assert_eq!(db.get("key1"), None);
     }
 }
