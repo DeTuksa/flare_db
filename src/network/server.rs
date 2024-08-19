@@ -47,7 +47,8 @@ async fn handl_client(
                     Ok(msg) => {
                         let response = match msg {
                             Message::Get(key) => {
-                                let value = db.lock().unwrap().get_in_memory(&key).or_else(|| db.lock().unwrap().get_persistent(&key));
+                                let db_clone = db.lock().unwrap();
+                                let value = db_clone.get_in_memory(&key).or_else(|| db_clone.get_persistent(&key));
                                 Response::Value(value)
                             }
                             Message::Set(key, value) => {
