@@ -35,11 +35,11 @@ impl Storage {
         self.in_memory_db.set(key, value)
     }
 
-    pub fn get_in_memory(&self, key: String) -> Option<String> {
+    pub fn get_in_memory(&self, key: &str) -> Option<String> {
         self.in_memory_db.get(key)
     }
 
-    pub fn delete_in_memory(&self, key: String) -> bool {
+    pub fn delete_in_memory(&self, key: &str) -> bool {
         self.in_memory_db.delete(key)
     }
 
@@ -73,7 +73,7 @@ impl Storage {
                     }
                     "DELETE" if parts.len() == 2 => {
                         let key = parts[1];
-                        self.in_memory_db.delete(key.to_string());
+                        self.in_memory_db.delete(key);
                     }
                     _ => eprintln!("Unrecognized command in log: {}", command)
                 }

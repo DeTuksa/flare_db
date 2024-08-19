@@ -47,7 +47,7 @@ async fn handl_client(
                     Ok(msg) => {
                         let response = match msg {
                             Message::Get(key) => {
-                                let value = db.lock().unwrap().get_in_memory(key.clone()).or_else(|| db.lock().unwrap().get_persistent(&key));
+                                let value = db.lock().unwrap().get_in_memory(&key).or_else(|| db.lock().unwrap().get_persistent(&key));
                                 Response::Value(value)
                             }
                             Message::Set(key, value) => {
@@ -56,7 +56,7 @@ async fn handl_client(
                                 Response::Success(success_in_mem && success_pers)
                             }
                             Message::Delete(key) => {
-                                let success_in_mem =db.lock().unwrap().delete_in_memory(key.clone());
+                                let success_in_mem =db.lock().unwrap().delete_in_memory(&key);
                                 let success_pers =db.lock().unwrap().delete_persistent(&key);
                                 Response::Success(success_pers && success_in_mem)
                             }
