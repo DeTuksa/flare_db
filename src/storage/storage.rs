@@ -26,7 +26,7 @@ impl Storage {
             persistent_db: Arc::new(PersistentDB::new(db_path.to_str().unwrap())),
             append_log: Arc::new(Mutex::new(AppendOnlyLog::new(&log_path).expect("Failed to create append-only log"))),
             operation_count: 0,
-            compaction_threshold: 5
+            compaction_threshold: 1000
         }
     }
 
