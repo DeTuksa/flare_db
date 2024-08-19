@@ -3,7 +3,7 @@ use rocksdb::{DB, Options};
 
 #[derive(Debug, Clone)]
 pub struct PersistentDB {
-    rocksDb: Arc<RwLock<DB>>,
+    rocks_db: Arc<RwLock<DB>>,
 }
 
 impl PersistentDB {
@@ -12,17 +12,17 @@ impl PersistentDB {
         options.create_if_missing(true);
         let db = DB::open(&options, path).unwrap();
         PersistentDB {
-            rocksDb: Arc::new(RwLock::new(db))
+            rocks_db: Arc::new(RwLock::new(db))
         }
     }
 
     pub fn set(&self, key: String, value: String) -> bool {
-        let db = self.rocksDb.write().unwrap();
+        let db = self.rocks_db.write().unwrap();
         db.put(key, value).is_ok()
     }
 
     pub fn get(&self, key: &str) -> Option<String> {
-        let db = self.rocksDb.read().unwrap();
+        let db = self.rocks_db.read().unwrap();
         match db.get(key.as_bytes()) {
             Ok(Some(value)) => Some(String::from_utf8(value).unwrap()),
             Ok(None) => None,
@@ -31,7 +31,7 @@ impl PersistentDB {
     }
 
     pub fn delete(&self, key: &str) -> bool {
-        let db = self.rocksDb.write().unwrap();
+        let db = self.rocks_db.write().unwrap();
         db.delete(key).is_ok()
     }
 }
