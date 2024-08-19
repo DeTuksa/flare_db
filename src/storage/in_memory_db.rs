@@ -27,6 +27,10 @@ impl InMemoryDB {
         let mut store = self.store.write().unwrap();
         store.remove(key).is_some()
     }
+
+    pub fn clone_state(&self) -> HashMap<String, String> {
+        self.clone().store.read().unwrap().clone()
+    }
 }
 
 #[cfg(test)]

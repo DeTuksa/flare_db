@@ -10,7 +10,9 @@ use super::{append_only_log::AppendOnlyLog, in_memory_db::InMemoryDB, persistent
 pub struct Storage {
     in_memory_db: Arc<InMemoryDB>,
     persistent_db: Arc<PersistentDB>,
-    append_log: Arc<Mutex<AppendOnlyLog>>
+    append_log: Arc<Mutex<AppendOnlyLog>>,
+    operation_count: usize,
+    compaction_threshold: usize
 }
 
 impl Storage {
@@ -22,7 +24,9 @@ impl Storage {
         Storage {
             in_memory_db: Arc::new(InMemoryDB::new()),
             persistent_db: Arc::new(PersistentDB::new(db_path.to_str().unwrap())),
-            append_log: Arc::new(Mutex::new(AppendOnlyLog::new(&log_path).expect("Failed to create append-only log")))
+            append_log: Arc::new(Mutex::new(AppendOnlyLog::new(&log_path).expect("Failed to create append-only log"))),
+            operation_count: 0,
+            compaction_threshold: 5
         }
     }
 
@@ -32,15 +36,29 @@ impl Storage {
             eprintln!("Failed to log SET command");
         }
 
-        self.in_memory_db.set(key, value)
+        let result = self.in_memory_db.set(key, value);
+
+        self.operation_count += 1;
+        if self.operation_count  >= self.compaction_threshold {
+            self.compact_log();
+        }
+
+        return  result
     }
 
     pub fn get_in_memory(&self, key: &str) -> Option<String> {
         self.in_memory_db.get(key)
     }
 
-    pub fn delete_in_memory(&self, key: &str) -> bool {
-        self.in_memory_db.delete(key)
+    pub fn delete_in_memory(&mut self, key: &str) -> bool {
+        let result = self.in_memory_db.delete(key);
+
+        self.operation_count += 1;
+        if self.operation_count >= self.compaction_threshold {
+            self.compact_log();
+        }
+
+        result
     }
 
     pub fn set_persistent(&self, key: String, value: String) -> bool {
@@ -79,6 +97,16 @@ impl Storage {
                 }
             }
         }
+    }
+
+    fn compact_log(&mut self) {
+        eprintln!("Compacting log...");
+        let state = self.in_memory_db.clone_state();
+        let append_clone = self.append_log.clone();
+        if append_clone.lock().unwrap().compact(&state).is_err() {
+            eprintln!("Failed to compact log");
+        }
+        self.operation_count = 0;
     }
 }
 
