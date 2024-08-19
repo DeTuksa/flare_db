@@ -1,8 +1,8 @@
 use std::sync::{Arc, RwLock};
 use rocksdb::{DB, Options};
 
-
-struct PersistentDB {
+#[derive(Debug, Clone)]
+pub struct PersistentDB {
     rocksDb: Arc<RwLock<DB>>,
 }
 
