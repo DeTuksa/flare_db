@@ -2,16 +2,16 @@ use std::{error::Error, sync::Arc};
 
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::TcpListener};
 
-use crate::{network::message::{Message, Response}, storage::in_memory_db::InMemoryDB};
+use crate::{network::message::{Message, Response}, storage::storage::Storage};
 
 pub struct Server {
-    db: Arc<InMemoryDB>
+    db: Arc<Storage>
 }
 
 impl Server {
-    pub fn new() -> Self {
+    pub fn new(path: &str) -> Self {
         Server {
-            db: Arc::new(InMemoryDB::new())
+            db: Arc::new(Storage::new(path))
         }
     }
 
@@ -31,7 +31,7 @@ impl Server {
 
 async fn handl_client(
     mut stream: tokio::net::TcpStream,
-    db: Arc<InMemoryDB>
+    db: Arc<Storage>
 ) {
     let mut buf = [0; 1024];
 
@@ -47,16 +47,18 @@ async fn handl_client(
                     Ok(msg) => {
                         let response = match msg {
                             Message::Get(key) => {
-                                let value = db.get(key);
+                                let value = db.get_in_memory(key.clone()).or_else(|| db.get_persistent(&key));
                                 Response::Value(value)
                             }
                             Message::Set(key, value) => {
-                                let success = db.set(key, value);
-                                Response::Success(success)
+                                let success_in_mem = db.set_in_memory(key.clone(), value.clone());
+                                let success_pers = db.set_persistent(key, value);
+                                Response::Success(success_in_mem && success_pers)
                             }
                             Message::Delete(key) => {
-                                let success =db.delete(key);
-                                Response::Success(success)
+                                let success_in_mem =db.delete_in_memory(key.clone());
+                                let success_pers =db.delete_persistent(&key);
+                                Response::Success(success_pers && success_in_mem)
                             }
                         };
                         let response_json = serde_json::to_string(&response).unwrap();

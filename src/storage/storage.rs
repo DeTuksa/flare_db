@@ -1,9 +1,9 @@
 use super::{in_memory_db::InMemoryDB, persistent_db::PersistentDB};
 
-pub enum StorageMode {
-    InMemory,
-    Persistent
-}
+// pub enum StorageMode {
+//     InMemory,
+//     Persistent
+// }
 
 pub struct Storage {
     in_memory_db: InMemoryDB,
@@ -31,7 +31,7 @@ impl Storage {
     }
 
     pub fn set_persistent(&self, key: String, value: String) -> bool {
-        self.set_persistent(key, value)
+        self.persistent_db.set(key, value)
     }
 
     pub fn get_persistent(&self, key: &str) -> Option<String> {
