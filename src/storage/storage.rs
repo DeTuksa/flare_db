@@ -9,7 +9,7 @@ use super::{append_only_log::AppendOnlyLog, in_memory_db::InMemoryDB, persistent
 
 pub struct Storage {
     in_memory_db: Arc<Mutex<InMemoryDB>>,
-    persistent_db: Arc<PersistentDB>,
+    // persistent_db: Arc<PersistentDB>,
     append_log: Arc<Mutex<AppendOnlyLog>>,
     operation_count: usize,
     compaction_threshold: usize,
@@ -25,7 +25,7 @@ impl Storage {
 
         Storage {
             in_memory_db: Arc::new(Mutex::new(InMemoryDB::new())),
-            persistent_db: Arc::new(PersistentDB::new(db_path.to_str().unwrap())),
+            // persistent_db: Arc::new(PersistentDB::new(db_path.to_str().unwrap())),
             append_log: Arc::new(Mutex::new(AppendOnlyLog::new(&log_path).expect("Failed to create append-only log"))),
             operation_count: 0,
             compaction_threshold: 1000,
@@ -73,17 +73,17 @@ impl Storage {
         result
     }
 
-    pub fn set_persistent(&self, key: String, value: String) -> bool {
-        self.persistent_db.set(key, value)
-    }
+    // pub fn set_persistent(&self, key: String, value: String) -> bool {
+    //     self.persistent_db.set(key, value)
+    // }
 
-    pub fn get_persistent(&self, key: &str) -> Option<String> {
-        self.persistent_db.get(key)
-    }
+    // pub fn get_persistent(&self, key: &str) -> Option<String> {
+    //     self.persistent_db.get(key)
+    // }
 
-    pub fn delete_persistent(&self, key: &str) -> bool {
-        self.persistent_db.delete(key)
-    }
+    // pub fn delete_persistent(&self, key: &str) -> bool {
+    //     self.persistent_db.delete(key)
+    // }
 
     pub fn replay_log(&mut self) {
         let log = self.append_log.lock().unwrap();

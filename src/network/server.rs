@@ -48,18 +48,19 @@ async fn handl_client(
                         let response = match msg {
                             Message::Get(key) => {
                                 let db_clone = db.lock().unwrap();
-                                let value = db_clone.get_in_memory(&key).or_else(|| db_clone.get_persistent(&key));
+                                let value = db_clone.get_in_memory(&key);
+                                // .or_else(|| db_clone.get_persistent(&key));
                                 Response::Value(value)
                             }
                             Message::Set(key, value) => {
                                 let success_in_mem = db.lock().unwrap().set_in_memory(key.clone(), value.clone());
-                                let success_pers = db.lock().unwrap().set_persistent(key, value);
-                                Response::Success(success_in_mem && success_pers)
+                                // let success_pers = db.lock().unwrap().set_persistent(key, value);
+                                Response::Success(success_in_mem)
                             }
                             Message::Delete(key) => {
                                 let success_in_mem =db.lock().unwrap().delete_in_memory(&key);
-                                let success_pers =db.lock().unwrap().delete_persistent(&key);
-                                Response::Success(success_pers && success_in_mem)
+                                // let success_pers =db.lock().unwrap().delete_persistent(&key);
+                                Response::Success(success_in_mem)
                             }
                         };
                         let response_json = serde_json::to_string(&response).unwrap();

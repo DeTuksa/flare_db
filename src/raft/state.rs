@@ -1,5 +1,8 @@
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+use crate::raft::rpc::*;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogEntry {
     pub term: u64,
     pub command: String
@@ -35,5 +38,56 @@ impl RaftState {
 
     pub fn last_log_term(&self) -> u64 {
         self.log.last().map_or(0, |entry| entry.term)
+    }
+
+    pub fn handle_append_entries(
+        &mut self,
+        req: AppendEntries
+    ) -> AppendEntriesResponse {
+        if req.term < self.current_term {
+            return AppendEntriesResponse {
+                term: self.current_term,
+                success: false
+            };
+        }
+
+        self.current_term = req.term;
+
+        if req.prev_log_index > 0 {
+            if let Some(entry) = self.log.get((req.prev_log_index - 1) as usize) {
+                if entry.term != req.prev_log_term {
+                    return  AppendEntriesResponse {
+                        term: self.current_term,
+                        success: false
+                    };
+                }
+            } else {
+                return AppendEntriesResponse {
+                    term: self.current_term,
+                    success: false
+                };
+            }
+        }
+
+        let mut index = req.prev_log_index + 1;
+        for new_entry in req.entries {
+            if let Some(existing_entry) = self.log.get_mut((index - 1) as usize) {
+                if existing_entry .term != new_entry.term {
+                    *existing_entry = new_entry;
+                }
+            } else {
+                self.log.push(new_entry);
+            }
+            index += 1;
+        }
+
+        if req.leader_commit > self.commit_index {
+            self.commit_index = req.leader_commit.min(index - 1);
+        }
+
+        AppendEntriesResponse {
+            term: self.current_term,
+            success: true
+        }
     }
 }
