@@ -10,7 +10,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let server = Server::new("default");
 
-    server.db.lock().unwrap().replay_log();
+    {
+        let mut db = server.db.lock().unwrap();
+        db.load_snapshot().await?;
+        db.replay_log();
+    }
 
     server.run(&addr).await?;
     Ok(())

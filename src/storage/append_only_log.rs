@@ -65,4 +65,12 @@ impl AppendOnlyLog {
             .open(&self.log_path)?;
         Ok(())
     }
+
+    pub fn clear(&mut self) -> Result<()> {
+        self.log_file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&self.log_path)?;
+        Ok(())
+    }
 }

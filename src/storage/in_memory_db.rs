@@ -1,5 +1,7 @@
 use std::{collections::HashMap, sync::{Arc, RwLock}};
 
+use serde::{Deserialize, Serialize};
+
 #[derive(Debug, Clone)]
 pub struct InMemoryDB {
     store: Arc<RwLock<HashMap<String, String>>>
@@ -30,6 +32,28 @@ impl InMemoryDB {
 
     pub fn clone_state(&self) -> HashMap<String, String> {
         self.clone().store.read().unwrap().clone()
+    }
+}
+
+impl Serialize for InMemoryDB {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let store = self.store.read().unwrap();
+        store.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for InMemoryDB {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let store = HashMap::deserialize(deserializer)?;
+        Ok(InMemoryDB {
+            store: Arc::new(RwLock::new(store)),
+        })
     }
 }
 
